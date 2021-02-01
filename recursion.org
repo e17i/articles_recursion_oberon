@@ -1,0 +1,53 @@
+# -*- org-html-postamble-format:(("en" "<p class="author">Author: %a
+# (Reddit: <a href="https://www.reddit.com/user/e17i">u/e17i</a>)</p> <p>Made on
+# emacs org-mode with <a href="https://jessekelly881-rethink.surge.sh/">Rethink</a></p>"));
+# org-html-postamble: t -*-
+#
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="/chrome/rethink.css" />
+#+OPTIONS: toc:nil num:nil html-style:nil
+# #+INFOJS_OPT: view:info toc:nil path:chrome/org-info.js
+#+AUTHOR: Jörg Kollmann
+#+TITLE: Recusion in Oberon (working title)
+#+DATE: 2021-02-01
+
+* TL;DR
+
+Some years ago, I was trying to wrap my head around how to transform
+recursions into iterative loops. The way to go would be transforming
+naive recursions into tail-call recursions, which can easily be
+expressed as loops. The harder part (especially when having more than
+one recursion call) is the transformation, which can be done using
+continuation passing. Motivation was, besides avoiding stack
+overflows, to gain a better understanding of the properties of
+recursive algrithms. I was doing this using =Oberon= (With's object
+oriented successor to =Pascal=), which doesn't support any tail call
+optimization. Still, I think until today it is one of the languages
+most adequate for expressing readable algorithms, for one part by
+using words instead of shortcuts for it's syntactical constructs,
+for the other part enforcing explicite formulations. While demanding
+more code, this facillitates readability of code.
+
+* First try
+
+#+begin_src screen
+MODULE Recursion;
+IMPORT Out;
+
+PROCEDURE fib(n:INTEGER): INTEGER;
+VAR result: INTEGER;
+BEGIN
+  IF n < 2 THEN result := 1
+  ELSE result := fib(n-2) + fib(n-1) END
+RETURN result END fib;
+
+PROCEDURE Test*; (* Recursion.Test *)
+VAR i: INTEGER;
+BEGIN
+  FOR i := 1 TO 35 DO
+    Out.WriteInt(i, 4); Out.WriteString(": ");
+    Out.WriteInt(fib(i), 4); Out.WriteLn
+  END
+END Test;
+
+END Recursion.
+#+end_src
