@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-02-02 Di. 19:29 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Transforming recursive Algorithms into iterative loops (in Oberon)</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Jörg Kollmann" />
+<link rel="stylesheet" type="text/css" href="/chrome/rethink.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="preamble" class="status">
+<img src="/chrome/image1.jpg"/><div style="padding:2vh"><a style="font-weight:900; text-decoration:none" href="/">Home</a><span style="float: right">last changed: 2021-02-01</span></div>
+</div>
+<div id="content">
+<h1 class="title">Transforming recursive Algorithms into iterative loops (in Oberon)</h1>
+
+<div id="outline-container-org6134725" class="outline-2">
+<h2 id="org6134725">TL;DR</h2>
+<div class="outline-text-2" id="text-org6134725">
+<p>
+Some years ago, I was trying to wrap my head around how to transform
+recursions into iterative loops. The way to go would be transforming
+typical recursions (e.g. derived from mathematical definitions) into
+tail-call recursions, which can then easily be expressed as loops. The
+harder part (especially when more than one recursion call is involved) is
+the transformation into a tail call recursion, which can be done using
+continuation passing. Motivation was, besides avoiding stack
+overflows, to gain a better understanding of the properties of
+recursive algorithms. I was doing this using <code>Oberon</code> (With's object
+oriented successor to <code>Pascal</code>), which I think until today is one of
+the languages most suitable for expressing readable algorithms.
+Besides that, it seems still worthy to learn from these experiments
+when e.g. programming in python.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org25a5394" class="outline-2">
+<h2 id="org25a5394">The fibonacci sequence</h2>
+<div class="outline-text-2" id="text-org25a5394">
+<p>
+The fibonacci sequence is a classical example of a sequence defined in
+terms of recursion. 
+</p>
+
+<ol class="org-ol">
+<li>f<sub>1</sub> = f<sub>2</sub> = 1</li>
+<li>f<sub>n</sub> = f<sub>n-2</sub> + f<sub>n-1</sub></li>
+</ol>
+
+<p>
+It also can be expressed easily in an iterative
+way:
+</p>
+
+<ol class="org-ol">
+<li>(f<sub>a</sub>, f<sub>b</sub>) := (1, 1)</li>
+<li>(f<sub>a</sub>, f<sub>b</sub>) := (f<sub>b</sub>, f<sub>a</sub> + f<sub>b</sub>)</li>
+<li>repeat step 2 until requested number reached</li>
+</ol>
+
+<p>
+While this can be formulated as a simple tail call recursion quite
+nicely, I was more interested in the first definition, as it's
+properties are more similar to those of recursive algorithms
+traversing binary trees, for example.
+</p>
+
+<p>
+In Oberon, it looks like this:
+</p>
+<div class="org-src-container">
+<pre class="src src-screen">PROCEDURE fib(n:INTEGER): INTEGER;
+VAR result: INTEGER;
+BEGIN
+  IF n &lt; 2 THEN result := 1
+  ELSE result := fib(n-2) + fib(n-1) END
+RETURN result END fib;
+</pre>
+</div>
+<p>
+As a remark, in Oberon-07 the <code>RETURN</code> statement is a special
+statement only applicable at the end of a function. This is to
+explicitly express there are no premature exits from the function
+procedure. While this sometimes demands the declaration of a local result
+variable in program code, it actually can be removed by an
+optimizing compiler.
+</p>
+
+<p>
+The fibonacci function can be embedded into a module like this:
+</p>
+<div class="org-src-container">
+<pre class="src src-screen">MODULE Recursion;
+IMPORT Out;
+
+PROCEDURE fib(n:INTEGER): INTEGER;
+(* implementation *)
+END fib;
+
+PROCEDURE Test*; (* Recursion.Test *)
+VAR i: INTEGER;
+BEGIN
+  FOR i := 1 TO 35 DO
+    Out.WriteInt(i, 4); Out.WriteString(<span style="color: #8b2252;">": "</span>);
+    Out.WriteInt(fib(i), 4); Out.WriteLn
+  END
+END Test;
+
+END Recursion.
+</pre>
+</div>
+<p>
+In an Oberon System, the <code>Test</code> procedure (declared as exported from the
+module by the asterisk) could then be executed by just clicking on the text
+<code>Recursion.Test</code> within the comment marks. Don't be disturbed too much
+by the very pascalesque style of the Write statements (and also not by
+the style of putting more than one statement into a single line..)
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb8d5ad0" class="outline-2">
+<h2 id="orgb8d5ad0">Tail call recursion with continuations</h2>
+<div class="outline-text-2" id="text-orgb8d5ad0">
+<p>
+In the next step, the simple recursive procedure is transformed into a
+tail call recursion, involving a result variable taken through
+the recursion, accumulating the intermediate result steps. As there
+are two recursive calls, this is done by using continuations.
+</p>
+
+<p>
+First, we define three classes (and a common base class) containing the data
+of the different continuation steps and the respective constructor
+procedures. 
+</p>
+<div class="org-src-container">
+<pre class="src src-screen">TYPE
+  Continuation = POINTER TO ContinuationDesc;
+  ContinuationDesc = RECORD END;
+
+  Ident = POINTER TO IdentDesc;
+  IdentDesc = RECORD(ContinuationDesc) END;
+
+  P1 = POINTER TO P1Desc;
+  P1Desc = RECORD(ContinuationDesc)
+    n: INTEGER;
+    cont: Continuation
+  END;
+
+  P2 = POINTER TO P2Desc;
+  P2Desc = RECORD(ContinuationDesc)
+    res1: INTEGER;
+    prev: P1
+  END;
+
+PROCEDURE ident(): Continuation;
+VAR result: Ident;
+BEGIN NEW(result)
+RETURN result END ident;
+
+PROCEDURE step1(n: INTEGER; cont: Continuation): Continuation;
+VAR result: P1;
+BEGIN NEW(result); result.n := n; result.cont := cont
+RETURN result END step1;
+
+PROCEDURE step2(res1: INTEGER; prev: P1): Continuation;
+VAR result: P2;
+BEGIN NEW(result); result.res1 := res1; result.prev := prev
+RETURN result END step2;
+</pre>
+</div>
+<p>
+The fibonacci function now needs a few embedded helper
+functions for the continuations. This actually could be expressed much
+more condensed if there were anonymous lambda functions and closures of
+local variable environments in Oberon. On the other hand, this
+explicit formulation of procedures in my opinion expresses more clearly the
+different steps involved. Also note in Oberon the <code>CASE</code>
+statement is actually a type dispatcher.
+</p>
+<div class="org-src-container">
+<pre class="src src-screen">PROCEDURE fib(n:INTEGER; cont: Continuation): INTEGER;
+VAR result: INTEGER;
+
+  PROCEDURE dispatch(cont: Continuation; value: INTEGER): INTEGER;
+  VAR result: INTEGER;
+
+    PROCEDURE Step1(closure: P1; res1: INTEGER): INTEGER;
+    BEGIN RETURN fib(closure.n-1, step2(res1, closure))
+    END Step1;
+
+    PROCEDURE Step2(closure: P2; res2: INTEGER): INTEGER;
+    BEGIN RETURN dispatch(closure.prev.cont, closure.res1 + res2)
+    END Step2;
+
+  BEGIN
+    CASE cont OF
+      Ident: result := value |
+      P1: result := Step1(cont, value) |
+      P2: result := Step2(cont, value)
+    END
+  RETURN result END dispatch;
+
+BEGIN
+  IF n &lt; 2 THEN result := dispatch(cont, 1)
+  ELSE result := fib(n-2, step1(n, cont)) END
+RETURN result END fib;
+</pre>
+</div>
+<p>
+What this code says is
+</p>
+
+<ol class="org-ol">
+<li>if n &lt; 2, don't return the result value of 1, but dispatch it
+to the current continuation object,</li>
+<li>else do a recursive call of fib with n-2, forwarding it's
+result to a <code>P1</code> continuation object generated by the step1
+procedure.</li>
+</ol>
+
+<p>
+So far, now we have just one tail call recursion. Later on, when such
+a <code>P1</code> continuation is dispatched, it will do the second recursive
+call of fib, this time with n-1 and forwarding that call's result to a
+<code>P2</code> continuation object, which also receives the result of the first
+call. Again later on, when dispatching that <code>P2</code> object, the two intermediate
+results forwarded from the previous calls with n-2 and n-1 are added
+and the final result is dispatched to the stored initial continuation.
+</p>
+
+<p>
+Finally, the initial call to fib in the Test procedure is changed to
+<code>Out.WriteInt(fib(i, ident()), 4);</code>. This way, the continuation object
+receiving the final result when dispatched will just return it.
+</p>
+
+<p>
+As you see, this involves quite a few bits of glue code, some of which is
+going away again in the next step. 
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1241312" class="outline-2">
+<h2 id="org1241312">Iterative approach</h2>
+<div class="outline-text-2" id="text-org1241312">
+<p>
+Now, each tail call recursion is nothing else than a loop with the
+parameter variable values replaced by the arguments of the recursion call.
+We now do this transformation into a loop in two steps. First, if you
+have a closer look, you see there actually is an inner (tail call)
+recursion in the dispatch function.
+</p>
+<div class="org-src-container">
+<pre class="src src-screen">PROCEDURE fib(n:INTEGER; cont: Continuation): INTEGER;
+VAR result: INTEGER;
+
+  PROCEDURE dispatch(cont: Continuation; result: INTEGER): INTEGER;
+  VAR
+    closure: Continuation;
+    <span style="color: #a020f0;">done</span>: BOOLEAN;
+  BEGIN done := FALSE;
+    REPEAT
+      closure := cont;
+      CASE closure OF
+        Ident: done := TRUE |
+        P1: result := fib(closure.n-1, step2(result, closure)); <span style="color: #a020f0;">done</span> := TRUE |
+        P2: INC(result, closure.res1); cont := closure.prev.cont;
+      END
+    UNTIL done
+  RETURN result END dispatch;
+
+BEGIN
+  IF n &lt; 2 THEN result := dispatch(cont, 1)
+  ELSE result := fib(n-2, step1(n, cont)) END
+RETURN result END fib;
+</pre>
+</div>
+<p>
+Now, the dispatch function contains a loop and the two helper
+functions are gone. In case of dispatching a <code>P1</code> object, as before,
+we return the result of the recursive fib call and leave the loop. In
+case of the <code>Ident</code> object, the loop is also left and we just route
+through the result passed in.
+</p>
+
+<p>
+<code>P2</code> objects are dispatched now by adding their intermediate result to
+our result variable, taking their continuation object as our next one
+and then repeating, which is exactly what the recursive dispatch call
+in the previous version did (if the Oberon compiler could do tail call
+optimization).
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgef3162a" class="outline-2">
+<h2 id="orgef3162a">Iterative approach, continued</h2>
+<div class="outline-text-2" id="text-orgef3162a">
+<p>
+Finally, we also transform the outer recursion into a loop, combining
+it with the dispatcher loop into a multi-headed <code>WHILE</code>, which again is
+a specialty of Oberon.
+</p>
+<div class="org-src-container">
+<pre class="src src-screen">PROCEDURE fib(n:INTEGER; cont: Continuation): INTEGER;
+VAR
+  closure: Continuation;
+  result: INTEGER;
+BEGIN result := 1;
+  WHILE n &gt;= 2 DO
+    cont := step1(n, cont); DEC(n, 2)
+  ELSIF ~(cont IS Ident) DO
+    closure := cont;
+    CASE closure OF
+      P1: cont := step2(result, closure); n := closure.n-1; result := 1 |
+      P2: INC(result, closure.res1); cont := closure.prev.cont;
+    END
+  END
+RETURN result END fib;
+</pre>
+</div>
+<p>
+While this looks totally non-intuitive compared to the original simple
+recursion, it shows how a recursion with more than one recursive
+call can be implemented as a loop.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga97dcef" class="outline-2">
+<h2 id="orga97dcef">Final thoughts</h2>
+<div class="outline-text-2" id="text-orga97dcef">
+<p>
+When thinking about this, you see the growing stack involved in the
+original recursion actually being replaced by a growing structure of objects
+dynamically allocated in memory. In the recursive case, the stack is
+unfolded by leaving recursion levels, while in the iteration, the
+garbage collector is involved, cleaning up abandoned objects.
+</p>
+
+<p>
+When using the original Oberon system with cooperative multitasking,
+you could now do further rewrites involving oberon tasks,
+breaking down the loop into task steps to allow the garbage collector to
+kick in between.
+</p>
+
+<p>
+You could also replace the dynamically allocated objects by using a
+static array of objects in form of an explicit stack. When doing this
+you might find some interesting peculiarities, like the maximum array
+size needed for this being n-1, which is obvious if you think about this
+recursion a little bit ;-)
+</p>
+
+<p>
+If you like, leave a comment on <a href="https://www.reddit.com/r/joergsworld/comments/jopz27/transforming_recursive_algorithms_into_iterative_loops/">Reddit</a>.
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Jörg Kollmann
+(Reddit: <a href="https://www.reddit.com/user/e17i">u/e17i</a>)</p> <p>Made on
+emacs org-mode with <a href="https://jessekelly881-rethink.surge.sh/">Rethink</a></p>
+</div>
+</body>
+</html>
