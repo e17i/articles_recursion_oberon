@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-02-02 Di. 19:29 -->
+<!-- 2021-02-02 Di. 19:54 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Transforming recursive Algorithms into iterative loops (in Oberon)</title>
@@ -64,9 +64,9 @@ for the JavaScript code in this tag.
 <div id="content">
 <h1 class="title">Transforming recursive Algorithms into iterative loops (in Oberon)</h1>
 
-<div id="outline-container-org6134725" class="outline-2">
-<h2 id="org6134725">TL;DR</h2>
-<div class="outline-text-2" id="text-org6134725">
+<div id="outline-container-orgbe46565" class="outline-2">
+<h2 id="orgbe46565">TL;DR</h2>
+<div class="outline-text-2" id="text-orgbe46565">
 <p>
 Some years ago, I was trying to wrap my head around how to transform
 recursions into iterative loops. The way to go would be transforming
@@ -85,9 +85,9 @@ when e.g. programming in python.
 </div>
 </div>
 
-<div id="outline-container-org25a5394" class="outline-2">
-<h2 id="org25a5394">The fibonacci sequence</h2>
-<div class="outline-text-2" id="text-org25a5394">
+<div id="outline-container-orgc6e32d3" class="outline-2">
+<h2 id="orgc6e32d3">The fibonacci sequence</h2>
+<div class="outline-text-2" id="text-orgc6e32d3">
 <p>
 The fibonacci sequence is a classical example of a sequence defined in
 terms of recursion. 
@@ -170,9 +170,9 @@ the style of putting more than one statement into a single line..)
 </div>
 </div>
 
-<div id="outline-container-orgb8d5ad0" class="outline-2">
-<h2 id="orgb8d5ad0">Tail call recursion with continuations</h2>
-<div class="outline-text-2" id="text-orgb8d5ad0">
+<div id="outline-container-org2eb3f4b" class="outline-2">
+<h2 id="org2eb3f4b">Tail call recursion with continuations</h2>
+<div class="outline-text-2" id="text-org2eb3f4b">
 <p>
 In the next step, the simple recursive procedure is transformed into a
 tail call recursion, involving a result variable taken through
@@ -294,9 +294,9 @@ going away again in the next step.
 </div>
 </div>
 
-<div id="outline-container-org1241312" class="outline-2">
-<h2 id="org1241312">Iterative approach</h2>
-<div class="outline-text-2" id="text-org1241312">
+<div id="outline-container-org7de1da8" class="outline-2">
+<h2 id="org7de1da8">Iterative approach</h2>
+<div class="outline-text-2" id="text-org7de1da8">
 <p>
 Now, each tail call recursion is nothing else than a loop with the
 parameter variable values replaced by the arguments of the recursion call.
@@ -347,9 +347,9 @@ optimization).
 </div>
 </div>
 
-<div id="outline-container-orgef3162a" class="outline-2">
-<h2 id="orgef3162a">Iterative approach, continued</h2>
-<div class="outline-text-2" id="text-orgef3162a">
+<div id="outline-container-orge324e8d" class="outline-2">
+<h2 id="orge324e8d">Iterative approach, continued</h2>
+<div class="outline-text-2" id="text-orge324e8d">
 <p>
 Finally, we also transform the outer recursion into a loop, combining
 it with the dispatcher loop into a multi-headed <code>WHILE</code>, which again is
@@ -381,9 +381,9 @@ call can be implemented as a loop.
 </div>
 </div>
 
-<div id="outline-container-orga97dcef" class="outline-2">
-<h2 id="orga97dcef">Final thoughts</h2>
-<div class="outline-text-2" id="text-orga97dcef">
+<div id="outline-container-org90877f7" class="outline-2">
+<h2 id="org90877f7">Final thoughts</h2>
+<div class="outline-text-2" id="text-org90877f7">
 <p>
 When thinking about this, you see the growing stack involved in the
 original recursion actually being replaced by a growing structure of objects
@@ -408,7 +408,7 @@ recursion a little bit ;-)
 </p>
 
 <p>
-If you like, leave a comment on <a href="https://www.reddit.com/r/joergsworld/comments/jopz27/transforming_recursive_algorithms_into_iterative_loops/">Reddit</a>.
+If you like, leave a comment on <a href="https://www.reddit.com/r/joergsworld/comments/lb36en/transforming_recursive_algorithms_into_iterative/">Reddit</a>.
 </p>
 </div>
 </div>

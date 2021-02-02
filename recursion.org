@@ -279,7 +279,7 @@ you might find some interesting peculiarities, like the maximum array
 size needed for this being n-1, which is obvious if you think about this
 recursion a little bit ;-)
 
-If you like, leave a comment on [[https://www.reddit.com/r/joergsworld/comments/jopz27/transforming_recursive_algorithms_into_iterative_loops/][Reddit]].
+If you like, leave a comment on [[https://www.reddit.com/r/joergsworld/comments/lb36en/transforming_recursive_algorithms_into_iterative/][Reddit]].
 
 * COMMENT Local Variables
   # Local Variables:
