@@ -278,3 +278,14 @@ static array of objects in form of an explicit stack. When doing this
 you might find some interesting peculiarities, like the maximum array
 size needed for this being n-1, which is obvious if you think about this
 recursion a little bit ;-)
+
+If you like, leave a comment on [[https://www.reddit.com/r/joergsworld/comments/jopz27/transforming_recursive_algorithms_into_iterative_loops/][Reddit]].
+
+* COMMENT Local Variables
+  # Local Variables:
+  # org-html-htmlize-output-type: css
+  # org-html-postamble-format:(("en" "<p class=\"author\">Author: %a (Reddit: <a href=\"https://www.reddit.com/user/e17i\">u/e17i</a>)</p> <p>Made on emacs org-mode with <a href=\"https://jessekelly881-rethink.surge.sh/\">Rethink</a></p>"))
+  # org-html-postamble: 't
+  # org-html-preamble-format:(("en" "<img src=\"/chrome/image1.jpg\"/><div style=\"padding:2vh\"><a style=\"font-weight:900; text-decoration:none\" href=\"/\">Home</a><span style=\"float: right\">last changed: %d</span></div>"))
+  # org-html-preamble: 't
+  # End:
