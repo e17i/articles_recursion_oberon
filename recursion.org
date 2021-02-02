@@ -16,29 +16,61 @@ Some years ago, I was trying to wrap my head around how to transform
 recursions into iterative loops. The way to go would be transforming
 naive recursions into tail-call recursions, which can easily be
 expressed as loops. The harder part (especially when having more than
-one recursion call) is the transformation, which can be done using
-continuation passing. Motivation was, besides avoiding stack
-overflows, to gain a better understanding of the properties of
-recursive algrithms. I was doing this using =Oberon= (With's object
-oriented successor to =Pascal=), which doesn't support any tail call
-optimization. Still, I think until today it is one of the languages
-most adequate for expressing readable algorithms, for one part by
-using words instead of shortcuts for it's syntactical constructs,
-for the other part enforcing explicite formulations. While demanding
-more code, this facillitates readability of code.
+one recursion call) is the transformation into a tail call recustion,
+which can be done using continuation passing. Motivation was, besides
+avoiding stack overflows, to gain a better understanding of the
+properties of recursive algrithms. I was doing this using =Oberon=
+(With's object oriented successor to =Pascal=), which I think until
+today is one of the languages most adequate for expressing readable
+algorithms.
+# , for one part by
+# using words instead of shortcuts for it's syntactical constructs,
+# for the other part enforcing explicite formulations. While demanding
+# more code, this facillitates readability of code.
 
-* First try
+* The fibonacci sequence
 
+The fibonacci sequence is a classical example of a sequence defined in
+terms of recusion. 
+
+    1. f_1 = f_2 = 1
+    2. f_{n} = f_{n-2} + f_{n-1}
+
+It also can be easily expressed in an iterative
+way:
+
+    1. (f_a, f_b) := (1, 1)
+    2. (f_a, f_b) := (f_b, f_a + f_b)
+    3. repeat step 2 until requested number reached
+
+While this can be formulated as a simple tail call recursion quite
+easy, I was more interested in the first definition, as it's
+properties are more similar to those of recursive algorithms
+traversing trees, for example.
+
+In Oberon, it looks like this:
 #+begin_src screen
-MODULE Recursion;
-IMPORT Out;
-
 PROCEDURE fib(n:INTEGER): INTEGER;
 VAR result: INTEGER;
 BEGIN
   IF n < 2 THEN result := 1
   ELSE result := fib(n-2) + fib(n-1) END
 RETURN result END fib;
+#+end_src
+As a remark, in Oberon-07 the =RETURN= statement is a special
+statement only applicable at the end of a function. This is to
+explicitely express there are no premature exits from the function
+procedure. While this demands the declaration of a local result
+variable, it actually can be removed by an optimizing compiler.
+
+The fibonacci function can be embedded into a module like this:
+#+begin_src screen
+MODULE Recursion;
+IMPORT Out;
+
+PROCEDURE fib(n:INTEGER): INTEGER;
+(* implementation *)
+END fib;
 
 PROCEDURE Test*; (* Recursion.Test *)
 VAR i: INTEGER;
@@ -51,3 +83,193 @@ END Test;
 
 END Recursion.
 #+end_src
+In an Oberon System, the =Test= procedure (declared as exported from the
+module by the asterisk) could then be executed by just clicking on the text
+=Recursion.Test= within the comment marks. Don't be disturbed too much
+by the very pascalesque style of the Write statements.
+
+* Tail call recustion with continuations
+
+In the next step, the simple recursive procedure is transformed into a
+tail call recursion. As there are two recursive calls, this is done by
+using continuations.
+
+#+begin_src screen
+TYPE
+  Continuation = POINTER TO ContinuationDesc;
+  ContinuationDesc = RECORD END;
+
+  Ident = POINTER TO IdentDesc;
+  IdentDesc = RECORD(ContinuationDesc) END;
+
+  P1 = POINTER TO P1Desc;
+  P1Desc = RECORD(ContinuationDesc)
+    n: INTEGER;
+    cont: Continuation
+  END;
+
+  P2 = POINTER TO P2Desc;
+  P2Desc = RECORD(ContinuationDesc)
+    res1: INTEGER;
+    prev: P1
+  END;
+
+PROCEDURE ident(): Continuation;
+VAR result: Ident;
+BEGIN NEW(result)
+RETURN result END ident;
+
+PROCEDURE step1(n: INTEGER; cont: Continuation): Continuation;
+VAR result: P1;
+BEGIN NEW(result); result.n := n; result.cont := cont
+RETURN result END step1;
+
+PROCEDURE step2(res1: INTEGER; prev: P1): Continuation;
+VAR result: P2;
+BEGIN NEW(result); result.res1 := res1; result.prev := prev
+RETURN result END step2;
+
+PROCEDURE fib(n:INTEGER; cont: Continuation): INTEGER;
+VAR result: INTEGER;
+
+  PROCEDURE dispatch(cont: Continuation; value: INTEGER): INTEGER;
+  VAR result: INTEGER;
+
+    PROCEDURE Step1(cloj: P1; res1: INTEGER): INTEGER;
+    BEGIN RETURN fib(cloj.n-1, step2(res1, cloj))
+    END Step1;
+
+    PROCEDURE Step2(cloj: P2; res2: INTEGER): INTEGER;
+    BEGIN RETURN dispatch(cloj.prev.cont, cloj.res1 + res2)
+    END Step2;
+
+  BEGIN
+    CASE cont OF
+      Ident: result := value |
+      P1: result := Step1(cont, value) |
+      P2: result := Step2(cont, value)
+    END
+  RETURN result END dispatch;
+
+BEGIN
+  IF n < 2 THEN result := dispatch(cont, 1)
+  ELSE result := fib(n-2, step1(n, cont)) END
+RETURN result END fib;
+#+end_src
+We define three classes (and a common base class) containing the data
+of the different continuation steps and the respective constructor
+procedures. The fibonacci function now needs a few embedded helper
+functions for the continuations. This actually could be expressed much
+more condensed if there were anonymous lambda functions and closures of
+local variable environments in Oberon. On the other side, this
+explicit formulation of procedures may express more clearly the
+different steps involved. Also note in Oberon the =CASE=
+statement is actually a type dispatcher.
+
+What this code says is
+
+    1. if n < 2, dispatch the value of 1 to the current continuation
+       object,
+    2. else return the recursive call of fib with n-2 and a =P1= continuation object
+       generated by the step1 procedure.
+
+So far, now we have just one tail call recursion. Later on, when such
+a =P1= continuation is dispatched, it will do the second recursive
+call of fib, this time with n-1 and a =P2= continuation object
+receiving the result of the first call. Again later on, when
+dispatching that one, the two intermediate results forwarded from the
+previous calls with n-2 and n-1 are added and the final result is
+dispatched to the stored initial continuation.
+
+Finally, the initial call to fib in the Test procedure is changed to
+=Out.WriteInt(fib(i, ident()), 4);=. This way, the continuation object
+receiving the final result when dispatched will just return it.
+
+As you see, this involves quite a few bits of glue code, some of which is
+going away again in the next step. 
+
+* Iterative approach
+
+Now, each tail call recursion is nothing else than a loop with the
+parameter variable values replaced by the arguments of the recursion call.
+We now do this transformation into a loop in two steps. First, if you
+have a closer look, you see there actually is an inner (tail call)
+recursion in the dispatch function.
+#+begin_src screen
+PROCEDURE fib(n:INTEGER; cont: Continuation): INTEGER;
+VAR result: INTEGER;
+
+  PROCEDURE dispatch(cont: Continuation; result: INTEGER): INTEGER;
+  VAR
+    closure: Continuation;
+    done: BOOLEAN;
+  BEGIN done := FALSE;
+    REPEAT
+      closure := cont;
+      CASE closure OF
+        Ident: done := TRUE |
+        P1: result := fib(closure.n-1, step2(result, closure)); done := TRUE |
+        P2: INC(result, closure.res1); cont := closure.prev.cont;
+      END
+    UNTIL done
+  RETURN result END dispatch;
+
+BEGIN
+  IF n < 2 THEN result := dispatch(cont, 1)
+  ELSE result := fib(n - 2, step1(n, cont)) END
+RETURN result END fib;
+#+end_src
+Now, the dispatch function contains a loop and lost the two helper
+functions. On case of dispatching a =P1= object, as before, we return
+the result of the recursive fib call and leave the loop. In case of
+the =Ident= object, the loop is also left and we just route through
+the result passed in.
+
+=P2= objects are dispatched now by adding their intermediate result to
+our result variable, taking their continuation object as our next one
+and then repeating, which is exactly what the recursive dispatch call
+in the previous version did.
+
+* Iterative approach, continued
+
+Finally, we also transform the outer recursion into a loop, combining
+it with the dispater loop into a multi-headed =WHILE=, which again is
+a specialty of Oberon.
+#+begin_src screen
+PROCEDURE fib(n, result:INTEGER; cont: Continuation): INTEGER;
+VAR
+  closure: Continuation;
+BEGIN
+  WHILE n >= 2 DO
+    cont := step1(n, cont); DEC(n, 2); result := 1
+  ELSIF ~(cont IS Ident) DO
+    closure := cont;
+    CASE closure OF
+      P1: cont := step2(result, closure); n := closure.n-1; result := 1 |
+      P2: INC(result, closure.res1); cont := closure.prev.cont;
+    END
+  END
+RETURN result END fib;
+#+end_src
+While this looks totally non-intuitive compared to the original simple
+recursion, it shows that even a recursion with more than one recursive
+call can be transformed into a loop.
+
+* Final thoughts
+
+When thinking about this, you see the growing stack involved in the
+original recursion is actually replaced by a growing structure
+dynamically allocated in memory. In the recursive case, the stack is
+unfolded by leaving recursion levels, while in the iteration, the
+garbage collector is involved, cleaning up abandoned objects.
+
+When using the original Oberon system with cooperative multitasking,
+you could now do further transformations involving oberon tasks,
+breaking up the loop into task steps to allow the garbage collector to
+step in inbetween.
+
+You could also replace the dynamically allocated objects by using a
+static array of objects in form of an explicite stack. When doing this
+you might find some interesting peculiarities, like the maximum array
+size needed for this is n-1, which is obvious if you think about this
+recursion a little bit ;-)
