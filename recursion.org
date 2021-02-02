@@ -256,7 +256,7 @@ RETURN result END fib;
 #+end_src
 While this looks totally non-intuitive compared to the original simple
 recursion, it shows how a recursion with more than one recursive
-call can be transformed into a loop.
+call can be implemented as a loop.
 
 * Final thoughts
 
@@ -268,11 +268,11 @@ garbage collector is involved, cleaning up abandoned objects.
 
 When using the original Oberon system with cooperative multitasking,
 you could now do further transformations involving oberon tasks,
-breaking up the loop into task steps to allow the garbage collector to
-step in between.
+breaking down the loop into task steps to allow the garbage collector to
+kick in between.
 
 You could also replace the dynamically allocated objects by using a
 static array of objects in form of an explicit stack. When doing this
 you might find some interesting peculiarities, like the maximum array
-size needed for this is n-1, which is obvious if you think about this
+size needed for this being n-1, which is obvious if you think about this
 recursion a little bit ;-)
