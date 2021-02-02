@@ -14,19 +14,17 @@
 
 Some years ago, I was trying to wrap my head around how to transform
 recursions into iterative loops. The way to go would be transforming
-simple recursions into tail-call recursions, which can then easily be
-expressed as loops. The harder part (especially when having more than
-one recursion call) is the transformation into a tail call recursion,
-which can be done using continuation passing. Motivation was, besides
-avoiding stack overflows, to gain a better understanding of the
-properties of recursive algrithms. I was doing this using =Oberon=
-(With's object oriented successor to =Pascal=), which I think until
-today is one of the languages most suitable for expressing readable
-algorithms.
-# , for one part by
-# using words instead of shortcuts for it's syntactical constructs,
-# for the other part enforcing explicit formulations. While demanding
-# more code, this facillitates readability of code.
+typical recursions (e.g. derived from mathematical definitions) into
+tail-call recursions, which can then easily be expressed as loops. The
+harder part (especially when more than one recursion call is involved) is
+the transformation into a tail call recursion, which can be done using
+continuation passing. Motivation was, besides avoiding stack
+overflows, to gain a better understanding of the properties of
+recursive algorithms. I was doing this using =Oberon= (With's object
+oriented successor to =Pascal=), which I think until today is one of
+the languages most suitable for expressing readable algorithms.
+Besides that, it seems still worthy to learn from these experiments
+when e.g. programming in python.
 
 * The fibonacci sequence
 
@@ -46,7 +44,7 @@ way:
 While this can be formulated as a simple tail call recursion quite
 nicely, I was more interested in the first definition, as it's
 properties are more similar to those of recursive algorithms
-traversing trees, for example.
+traversing binary trees, for example.
 
 In Oberon, it looks like this:
 #+begin_src screen
@@ -60,8 +58,9 @@ RETURN result END fib;
 As a remark, in Oberon-07 the =RETURN= statement is a special
 statement only applicable at the end of a function. This is to
 explicitly express there are no premature exits from the function
-procedure. While this demands the declaration of a local result
-variable, it actually can be removed by an optimizing compiler.
+procedure. While this sometimes demands the declaration of a local result
+variable in program code, it actually can be removed by an
+optimizing compiler.
 
 The fibonacci function can be embedded into a module like this:
 #+begin_src screen
@@ -86,13 +85,15 @@ END Recursion.
 In an Oberon System, the =Test= procedure (declared as exported from the
 module by the asterisk) could then be executed by just clicking on the text
 =Recursion.Test= within the comment marks. Don't be disturbed too much
-by the very pascalesque style of the Write statements.
+by the very pascalesque style of the Write statements (and also not by
+the style of putting more than one statement into a single line..)
 
 * Tail call recursion with continuations
 
 In the next step, the simple recursive procedure is transformed into a
-tail call recursion. As there are two recursive calls, this is done by
-using continuations.
+tail call recursion, involving a result variable taken through
+the recursion, accumulating the intermediate result steps. As there
+are two recursive calls, this is done by using continuations.
 
 First, we define three classes (and a common base class) containing the data
 of the different continuation steps and the respective constructor
@@ -135,7 +136,7 @@ RETURN result END step2;
 The fibonacci function now needs a few embedded helper
 functions for the continuations. This actually could be expressed much
 more condensed if there were anonymous lambda functions and closures of
-local variable environments in Oberon. On the other side, this
+local variable environments in Oberon. On the other hand, this
 explicit formulation of procedures in my opinion expresses more clearly the
 different steps involved. Also note in Oberon the =CASE=
 statement is actually a type dispatcher.
@@ -221,16 +222,17 @@ BEGIN
   ELSE result := fib(n-2, step1(n, cont)) END
 RETURN result END fib;
 #+end_src
-Now, the dispatch function contains a loop and lost the two helper
-functions. In case of dispatching a =P1= object, as before, we return
-the result of the recursive fib call and leave the loop. In case of
-the =Ident= object, the loop is also left and we just route through
-the result passed in.
+Now, the dispatch function contains a loop and the two helper
+functions are gone. In case of dispatching a =P1= object, as before,
+we return the result of the recursive fib call and leave the loop. In
+case of the =Ident= object, the loop is also left and we just route
+through the result passed in.
 
 =P2= objects are dispatched now by adding their intermediate result to
 our result variable, taking their continuation object as our next one
 and then repeating, which is exactly what the recursive dispatch call
-in the previous version did.
+in the previous version did (if the Oberon compiler could do tail call
+optimization).
 
 * Iterative approach, continued
 
@@ -261,13 +263,13 @@ call can be implemented as a loop.
 * Final thoughts
 
 When thinking about this, you see the growing stack involved in the
-original recursion is actually replaced by a growing structure of objects
+original recursion actually being replaced by a growing structure of objects
 dynamically allocated in memory. In the recursive case, the stack is
 unfolded by leaving recursion levels, while in the iteration, the
 garbage collector is involved, cleaning up abandoned objects.
 
 When using the original Oberon system with cooperative multitasking,
-you could now do further transformations involving oberon tasks,
+you could now do further rewrites involving oberon tasks,
 breaking down the loop into task steps to allow the garbage collector to
 kick in between.
 
