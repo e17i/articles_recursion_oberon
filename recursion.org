@@ -8,7 +8,7 @@
 # #+INFOJS_OPT: view:info toc:nil path:chrome/org-info.js
 #+AUTHOR: Jörg Kollmann
 #+TITLE: Transforming recursive Algorithms into iterative loops (in Oberon)
-#+DATE: 2021-02-01
+#+DATE: 2021-02-02
 
 * TL;DR
 

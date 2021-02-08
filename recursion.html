@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-02-02 Di. 19:54 -->
+<!-- 2021-02-08 Mo. 19:27 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Transforming recursive Algorithms into iterative loops (in Oberon)</title>
@@ -59,14 +59,14 @@ for the JavaScript code in this tag.
 </head>
 <body>
 <div id="preamble" class="status">
-<img src="/chrome/image1.jpg"/><div style="padding:2vh"><a style="font-weight:900; text-decoration:none" href="/">Home</a><span style="float: right">last changed: 2021-02-01</span></div>
+<img src="/chrome/image1.jpg"/><div style="padding:2vh"><a style="font-weight:900; text-decoration:none" href="/">Home</a><span style="float: right">last changed: 2021-02-02</span></div>
 </div>
 <div id="content">
 <h1 class="title">Transforming recursive Algorithms into iterative loops (in Oberon)</h1>
 
-<div id="outline-container-orgbe46565" class="outline-2">
-<h2 id="orgbe46565">TL;DR</h2>
-<div class="outline-text-2" id="text-orgbe46565">
+<div id="outline-container-org9afe9ea" class="outline-2">
+<h2 id="org9afe9ea">TL;DR</h2>
+<div class="outline-text-2" id="text-org9afe9ea">
 <p>
 Some years ago, I was trying to wrap my head around how to transform
 recursions into iterative loops. The way to go would be transforming
@@ -85,9 +85,9 @@ when e.g. programming in python.
 </div>
 </div>
 
-<div id="outline-container-orgc6e32d3" class="outline-2">
-<h2 id="orgc6e32d3">The fibonacci sequence</h2>
-<div class="outline-text-2" id="text-orgc6e32d3">
+<div id="outline-container-orgf47dc11" class="outline-2">
+<h2 id="orgf47dc11">The fibonacci sequence</h2>
+<div class="outline-text-2" id="text-orgf47dc11">
 <p>
 The fibonacci sequence is a classical example of a sequence defined in
 terms of recursion. 
@@ -152,7 +152,7 @@ PROCEDURE Test*; (* Recursion.Test *)
 VAR i: INTEGER;
 BEGIN
   FOR i := 1 TO 35 DO
-    Out.WriteInt(i, 4); Out.WriteString(<span style="color: #8b2252;">": "</span>);
+    Out.WriteInt(i, 4); Out.WriteString(<span class="org-string">": "</span>);
     Out.WriteInt(fib(i), 4); Out.WriteLn
   END
 END Test;
@@ -170,9 +170,9 @@ the style of putting more than one statement into a single line..)
 </div>
 </div>
 
-<div id="outline-container-org2eb3f4b" class="outline-2">
-<h2 id="org2eb3f4b">Tail call recursion with continuations</h2>
-<div class="outline-text-2" id="text-org2eb3f4b">
+<div id="outline-container-org39d71c4" class="outline-2">
+<h2 id="org39d71c4">Tail call recursion with continuations</h2>
+<div class="outline-text-2" id="text-org39d71c4">
 <p>
 In the next step, the simple recursive procedure is transformed into a
 tail call recursion, involving a result variable taken through
@@ -294,9 +294,9 @@ going away again in the next step.
 </div>
 </div>
 
-<div id="outline-container-org7de1da8" class="outline-2">
-<h2 id="org7de1da8">Iterative approach</h2>
-<div class="outline-text-2" id="text-org7de1da8">
+<div id="outline-container-orgcb323fd" class="outline-2">
+<h2 id="orgcb323fd">Iterative approach</h2>
+<div class="outline-text-2" id="text-orgcb323fd">
 <p>
 Now, each tail call recursion is nothing else than a loop with the
 parameter variable values replaced by the arguments of the recursion call.
@@ -311,13 +311,13 @@ VAR result: INTEGER;
   PROCEDURE dispatch(cont: Continuation; result: INTEGER): INTEGER;
   VAR
     closure: Continuation;
-    <span style="color: #a020f0;">done</span>: BOOLEAN;
+    <span class="org-keyword">done</span>: BOOLEAN;
   BEGIN done := FALSE;
     REPEAT
       closure := cont;
       CASE closure OF
         Ident: done := TRUE |
-        P1: result := fib(closure.n-1, step2(result, closure)); <span style="color: #a020f0;">done</span> := TRUE |
+        P1: result := fib(closure.n-1, step2(result, closure)); <span class="org-keyword">done</span> := TRUE |
         P2: INC(result, closure.res1); cont := closure.prev.cont;
       END
     UNTIL done
@@ -347,9 +347,9 @@ optimization).
 </div>
 </div>
 
-<div id="outline-container-orge324e8d" class="outline-2">
-<h2 id="orge324e8d">Iterative approach, continued</h2>
-<div class="outline-text-2" id="text-orge324e8d">
+<div id="outline-container-orgdc35b39" class="outline-2">
+<h2 id="orgdc35b39">Iterative approach, continued</h2>
+<div class="outline-text-2" id="text-orgdc35b39">
 <p>
 Finally, we also transform the outer recursion into a loop, combining
 it with the dispatcher loop into a multi-headed <code>WHILE</code>, which again is
@@ -381,9 +381,9 @@ call can be implemented as a loop.
 </div>
 </div>
 
-<div id="outline-container-org90877f7" class="outline-2">
-<h2 id="org90877f7">Final thoughts</h2>
-<div class="outline-text-2" id="text-org90877f7">
+<div id="outline-container-orgb83f8a1" class="outline-2">
+<h2 id="orgb83f8a1">Final thoughts</h2>
+<div class="outline-text-2" id="text-orgb83f8a1">
 <p>
 When thinking about this, you see the growing stack involved in the
 original recursion actually being replaced by a growing structure of objects
@@ -414,9 +414,7 @@ If you like, leave a comment on <a href="https://www.reddit.com/r/joergsworld/co
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="author">Author: Jörg Kollmann
-(Reddit: <a href="https://www.reddit.com/user/e17i">u/e17i</a>)</p> <p>Made on
-emacs org-mode with <a href="https://jessekelly881-rethink.surge.sh/">Rethink</a></p>
+<p class="author">Author: Jörg Kollmann (Reddit: <a href="https://www.reddit.com/user/e17i">u/e17i</a>)</p> <p>Made on emacs org-mode with <a href="https://jessekelly881-rethink.surge.sh/">Rethink</a></p>
 </div>
 </body>
 </html>
